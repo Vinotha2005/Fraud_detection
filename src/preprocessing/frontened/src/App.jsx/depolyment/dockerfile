@@ -1,0 +1,30 @@
+# Dockerfile for FraudShield
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements
+COPY requirements.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy source code
+COPY src/ ./src/
+COPY models/ ./models/
+
+# Expose API port
+EXPOSE 8000
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+ENV MODEL_DIR=/app/models
+
+# Run training if models don't exist, then start API
+CMD ["sh", "-c", "if [ ! -f /app/models/ensemble_model.joblib ]; then cd src && python train_model.py; fi && cd src/api && python api.py"]
